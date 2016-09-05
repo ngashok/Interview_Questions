@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include<strings.h>
+#include<limits.h>
 
 #define TRUE 1
 #define FALSE 0
@@ -101,7 +102,7 @@ void init_graph(graph *g)
     int i = 0;
     for (i = 0; i< sizeof(g->adj)/sizeof(edge*); i++) {
 	g->adj[i] = NULL;
-	g->weight[i] = 64000;
+	g->weight[i] = INT_MAX;
 	g->in_tree[i] = FALSE;
     }
 
@@ -191,13 +192,21 @@ void print_heap(bin_heap *heap)
 
 }
 
+#define PRIMS_ALGORITHM 1
+#define DIJKSTRAS_ALGORITHM 2
 
-void prims_algorithm(graph *g)
+void prims_or_dijkstras_algorithm(graph *g, int type)
 {
     int next_vertex  = 0;
     edge * e = NULL;
     int dest = 0;
     init_binary_heap(&(g->heap));
+
+   /*Imp: Initialize the weight of start vertex to 0 */
+    g->weight[next_vertex] = 0;
+
+    /* init weight of source vertex to 0 */
+    
     while ( g->in_tree[next_vertex] == FALSE) 
     {
 	g->in_tree[next_vertex] = TRUE;	
@@ -205,7 +214,7 @@ void prims_algorithm(graph *g)
 	while( e != NULL ) {
 	    /* update weight addition if we select vertex V */   
 	    dest = e->dest;
-	    if ( g->in_tree[dest] == FALSE) {
+	    if ( (g->in_tree[dest] == FALSE) && (type == PRIMS_ALGORITHM)) {
 		if (e->weight < g->weight[dest] ) {
 		    g->weight[dest] = e->weight;
 		    pq_node pq;
@@ -216,6 +225,18 @@ void prims_algorithm(graph *g)
 		    //Put to priority queue to select min
 		    insert_to_heap(&(g->heap),&pq);
 		}
+	    }
+	    /* Dijkstras Algorithm */
+	    if (((e->weight + g->weight[next_vertex]) < g->weight[dest]) && ( type == DIJKSTRAS_ALGORITHM )) {
+		    g->weight[dest] = e->weight;
+		    pq_node pq;
+		    pq.weight = g->weight[dest];
+		    pq.vertex = dest;
+		    pq.edge[0] = next_vertex;
+		    pq.edge[1] = dest;
+		    //Put to priority queue to select min
+		    insert_to_heap(&(g->heap),&pq);
+
 	    }
 	    e = e->next;
 	}
@@ -241,9 +262,9 @@ int main()
     insert_edge(&g,1,2,FALSE,1);
     insert_edge(&g,3,2,FALSE,15);
     display_adjacency_list(&g);
-
     /* Prims algorithm to find the min-weight spanning tree, using priority queues */
-    prims_algorithm(&g);
+    prims_or_dijkstras_algorithm(&g, PRIMS_ALGORITHM);
+    //prims_algorithm(&g, DIJKSTRAS_ALGORITHM);
     destroy_graph(&g);
 }
 
